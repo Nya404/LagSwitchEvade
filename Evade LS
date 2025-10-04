@@ -1,0 +1,132 @@
+local Players = game:GetService("Players")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ModernMobileLagGUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 80, 0, 80)
+mainFrame.Position = UDim2.new(0.1, 0, 0.8, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.2, 0)
+corner.Parent = mainFrame
+
+local shadow = Instance.new("Frame")
+shadow.Size = UDim2.new(1, 6, 1, 6)
+shadow.Position = UDim2.new(0, -3, 0, -3)
+shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+shadow.BackgroundTransparency = 0.7
+shadow.BorderSizePixel = 0
+shadow.ZIndex = -1
+local shadowCorner = Instance.new("UICorner")
+shadowCorner.CornerRadius = UDim.new(0.2, 0)
+shadowCorner.Parent = shadow
+shadow.Parent = mainFrame
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, 0, 1, 0)
+button.Position = UDim2.new(0, 0, 0, 0)
+button.BackgroundTransparency = 1
+button.Text = " "
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 24
+button.TextXAlignment = Enum.TextXAlignment.Center
+button.TextYAlignment = Enum.TextYAlignment.Center
+button.Parent = mainFrame
+
+local isLagging = false
+local dragging = false
+local dragStart, startPos
+
+local function updateTouch(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    shadow.Position = UDim2.new(0, -3, 0, -3)
+end
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        local dragConnection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragConnection:Disconnect()
+            end
+        end)
+        
+        spawn(function()
+            wait(1)
+            if input.UserInputState ~= Enum.UserInputState.End then
+                dragging = true
+                dragStart = input.Position
+                startPos = mainFrame.Position
+                mainFrame.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and dragging then
+        updateTouch(input)
+    end
+end)
+
+button.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and dragging then
+        dragging = false
+        mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+    end
+end)
+
+local function createLightLag()
+    spawn(function()
+        local total = 0
+        for j = 1, 100000 do
+            total = total + math.sin(j) * math.cos(j)
+        end
+    end)
+    
+    spawn(function()
+        local lightTable = {}
+        for j = 1, 7500 do
+            lightTable[j] = {
+                string.rep("LAG", 15),
+                math.random(1, 500000)
+            }
+        end
+    end)
+    
+    spawn(function()
+        local smallString = ""
+        for j = 1, 15000 do
+            smallString = smallString .. tostring(math.random(99999))
+        end
+    end)
+end
+
+local function activateLag()
+    if isLagging or dragging then return end
+    isLagging = true
+    mainFrame.BackgroundColor3 = Color3.fromRGB(220, 20, 60)
+    createLightLag()
+    spawn(function()
+        wait(1.5)
+        isLagging = false
+        mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+    end)
+end
+
+button.MouseButton1Click:Connect(activateLag)
+button.TouchTap:Connect(activateLag)
+
+Players.LocalPlayer.CharacterAdded:Connect(function()
+    isLagging = false
+    dragging = false
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+end)
