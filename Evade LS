@@ -7,8 +7,8 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 80, 0, 80)
-mainFrame.Position = UDim2.new(0.1, 0, 0.8, 0)
+mainFrame.Size = UDim2.new(0, 150, 0, 150)
+mainFrame.Position = UDim2.new(0.6, 0, -0.1, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = gui
@@ -36,7 +36,7 @@ button.BackgroundTransparency = 1
 button.Text = " "
 button.TextColor3 = Color3.new(1, 1, 1)
 button.Font = Enum.Font.GothamBold
-button.TextSize = 24
+button.TextSize = 40
 button.TextXAlignment = Enum.TextXAlignment.Center
 button.TextYAlignment = Enum.TextYAlignment.Center
 button.Parent = mainFrame
@@ -51,21 +51,55 @@ local function updateTouch(input)
     shadow.Position = UDim2.new(0, -3, 0, -3)
 end
 
+local function removeScript()
+    for i = 1, 5 do
+        mainFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        wait(0.1)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+        wait(0.1)
+    end
+    gui:Destroy()
+end
+
 button.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
-        local dragConnection = input.Changed:Connect(function()
+        local startTime = tick()
+        local inputEnded = false
+        
+        local endConnection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragConnection:Disconnect()
+                inputEnded = true
+                endConnection:Disconnect()
             end
         end)
         
         spawn(function()
-            wait(1)
-            if input.UserInputState ~= Enum.UserInputState.End then
+            while not inputEnded do
+                local elapsed = tick() - startTime
+                
+                if elapsed >= 5 then
+                    removeScript()
+                    break
+                elseif elapsed >= 3 then
+                    mainFrame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+                elseif elapsed >= 1 then
+                    mainFrame.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+                end
+                
+                wait(0.1)
+            end
+            
+            if not inputEnded then
+                mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+            end
+        end)
+        
+        spawn(function()
+            wait(2)
+            if not inputEnded and (tick() - startTime) < 3 then
                 dragging = true
                 dragStart = input.Position
                 startPos = mainFrame.Position
-                mainFrame.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
             end
         end)
     end
@@ -84,27 +118,10 @@ button.InputEnded:Connect(function(input)
     end
 end)
 
-local function createLightLag()
-    spawn(function()
-        local total = 0
-        for j = 1, 100000 do
-            total = total + math.sin(j) * math.cos(j)
-        end
-    end)
-    
-    spawn(function()
-        local lightTable = {}
-        for j = 1, 7500 do
-            lightTable[j] = {
-                string.rep("LAG", 15),
-                math.random(1, 500000)
-            }
-        end
-    end)
-    
+local function createStringLag()
     spawn(function()
         local smallString = ""
-        for j = 1, 15000 do
+        for j = 1, 7800 do
             smallString = smallString .. tostring(math.random(99999))
         end
     end)
@@ -113,14 +130,29 @@ end
 local function activateLag()
     if isLagging or dragging then return end
     isLagging = true
+    
+    createStringLag()
+    
     mainFrame.BackgroundColor3 = Color3.fromRGB(220, 20, 60)
-    createLightLag()
+    
     spawn(function()
-        wait(1.5)
+        wait(0.78)
         isLagging = false
         mainFrame.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
     end)
 end
+
+button.MouseEnter:Connect(function()
+    if not isLagging and not dragging then
+        activateLag()
+    end
+end)
+
+button.TouchStarted:Connect(function()
+    if not isLagging and not dragging then
+        activateLag()
+    end
+end)
 
 button.MouseButton1Click:Connect(activateLag)
 button.TouchTap:Connect(activateLag)
